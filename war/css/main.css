@@ -1,0 +1,89 @@
+img.photos {
+    -webkit-mask-image: url('/media/photoexplorer/photos1.png');
+}
+
+img.map {
+    -webkit-mask-image: url(../images/maps.png);
+}
+
+img.details {
+    -webkit-mask-image: url(../images/doc2.png);
+}
+
+h1 {
+    color: white;
+}
+
+#about {
+    padding: 0 40px;
+}
+
+#about p {
+    margin: 10px 0;
+    line-height: 1.8em;
+}
+
+.photoGrid {
+    background-color: #1f1c24;
+}
+
+.card {
+    background-color: #1f1c24;
+    text-align: center;
+    color: white;
+}
+
+.card a {
+    color: #CCC;
+}
+
+.card h2, .card h3 {
+    text-shadow: #333 0 1px 0;
+    font-size: 2.0em;
+    margin: 20px 30px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.card h3 {
+    font-size: 1.6em;
+}
+
+#photoDetails img {
+    border: 2px solid white;
+    -webkit-box-shadow: 0 2px 8px rgba(30, 30, 30, 0.8);
+}
+
+#photoDetails p.linkback {
+    margin: 10px 0 0 0;
+}
+
+.loading {
+  background: rgba(0,0,0,.3) url(../images/ajax-loader.gif) center center no-repeat;
+  display: block;
+  width: 10em;
+  height: 10em;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-left: -5em;
+  margin-top: -5em;  
+  -webkit-border-radius: .5em;
+  color: #fff;
+  text-shadow: #000 0 1px 1px;
+  text-align: center;
+  padding-top: 8em;
+  font-weight: bold;
+}
+
+/* sencha customizations */
+
+.x-list-midnight {
+    background: #111 -webkit-gradient(linear, left top, left bottom, from(#222), to(#555));
+    min-width: 200px;
+}
+
+.x-list-midnight .x-list-item {
+    color: white;
+}

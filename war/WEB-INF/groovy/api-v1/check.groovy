@@ -1,0 +1,1 @@
+response.outputStream << 'ok'
