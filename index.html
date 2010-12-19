@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">	
+    <title>Photo Explorer</title>
+	<link rel="stylesheet" href="css/sencha-touch.css" type="text/css">
+	<link rel="stylesheet" href="css/main.css" type="text/css">
+</head>
+<body>
+<div id="about" class="x-hidden-display">
+	<h2>Photo Explorer</h2>
+	<p>Created with Tile5 for the Sencha Touch comp - much more to do...</p>
+	<p>
+		Has been modified from the original <a target="_blank" href="http://www.tile5.org/photogrid">Tile5 PhotoGrid</a> to 
+		make use of some of the excellent UI elements provided in the Sencha library.
+	</p>
+	<h3>Things to Do / Fix</h3>
+	<ul>
+		<li>Tile5 not redrawing images correctly on pan operations when requesting more tiles - need to investigate.</li>
+		<li>Display found in a geosearch operation in the photogrid.</li>
+		<li>Refactor the code to be more view oriented as per examples...</li>
+		<li>Lots of little tweaks</li>
+	</ul>
+</div>
+<script type="text/javascript" src="js/sencha-touch-debug.js"></script>
+<script type="text/javascript" src="js/tile5/tile5.lite.js?v=3"></script>
+<script type="text/javascript" src="js/tile5/plugins/flickr.js"></script>
+<script type="text/javascript" src="js/main.js"></script>
+<script>
+var _gaq = [['_setAccount', 'UA-8447893-8'], ['_trackPageview']];
+(function(d, t) {
+var g = d.createElement(t),
+    s = d.getElementsByTagName(t)[0];
+g.async = true;
+g.src = '//www.google-analytics.com/ga.js';
+s.parentNode.insertBefore(g, s);
+})(document, 'script');
+</script>
+<script type="text/javascript" src="//static.woopra.com/js/woopra.v2.js"></script>
+<script type="text/javascript">
+woopraTracker.setDomain("tile5.org");
+woopraTracker.track();
+</script>
+</body>
+</html>
