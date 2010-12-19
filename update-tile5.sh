@@ -1,0 +1,1 @@
+cp -r /development/projects/websites/tile5/sandbox/media/tile5/dist/ /development/projects/websites/tile5/photoexplorer/js/tile5
