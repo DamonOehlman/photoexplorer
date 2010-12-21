@@ -6854,7 +6854,7 @@ T5.ImageLayer = function(genId, params) {
     }, params);
     
     // initialise variables
-    var generator = T5.Generator.init(genId, params),
+    var generator = genId ? T5.Generator.init(genId, params) : null,
         generatedImages = null,
         lastViewRect = T5.XYRect.init(),
         loadArgs = params.imageLoadArgs,
@@ -6866,7 +6866,11 @@ T5.ImageLayer = function(genId, params) {
     function regenerate(viewRect) {
         var removeIndexes = [],
             ii;
-        
+            
+        if (! generator) {
+            return;
+        } // if
+
         generator.run(viewRect, function(images) {
             generatedImages = images;
 
@@ -6899,7 +6903,9 @@ T5.ImageLayer = function(genId, params) {
     } // handleImageLoad
     
     function handleParentChange(evt, parent) {
-        generator.bindToView(parent);
+        if (generator) {
+            generator.bindToView(parent);
+        } // if
     } // handleParent
     
     function handleIdle(evt, view) {
@@ -6938,6 +6944,65 @@ T5.ImageLayer = function(genId, params) {
     
     /* exports */
     
+    /**
+    ### changeGenerator(generatorId, args)
+    */
+    function changeGenerator(generatorId, args) {
+        // update the generator
+        generator = T5.Generator.init(generatorId, T5.ex({}, params, args));
+        generator.bindToView(self.getParent());
+
+        // clear the generated images and regenerate
+        generatedImages = null;
+        regenerate(lastViewRect);
+    } // changeGenerator
+    
+    function draw(context, viewRect, state, view) {
+        // COG.Log.info('drawing image layer layer @ ', rect);
+        
+        context.save();
+        try {
+            context.strokeStyle = '#555';
+
+            context.beginPath();
+
+            if (generatedImages) {
+                for (var ii = generatedImages.length; ii--; ) {
+                    var xx = generatedImages[ii].x,
+                        yy = generatedImages[ii].y,
+                        // TODO: more efficient please...
+                        imageRect = T5.XYRect.init(
+                            generatedImages[ii].x,
+                            generatedImages[ii].y,
+                            generatedImages[ii].x + generatedImages[ii].width,
+                            generatedImages[ii].y + generatedImages[ii].height);
+
+                    // draw the image
+                    if (T5.XYRect.intersect(viewRect, imageRect)) {
+                        self.drawImage(context, viewRect, xx, yy, generatedImages[ii], state);
+                    } // if
+                } // for
+            } // if
+            
+            context.clip();
+        }
+        finally {
+            context.restore();
+        } // try..finally
+        
+        /*
+        context.strokeStyle = '#f00';
+        context.beginPath();
+        context.moveTo(viewRect.x1 + viewRect.width/2, viewRect.y1);
+        context.lineTo(viewRect.x1 + viewRect.width/2, viewRect.y2);
+        context.moveTo(viewRect.x1, viewRect.y1 + viewRect.height / 2);
+        context.lineTo(viewRect.x2, viewRect.y1 + viewRect.height / 2);
+        context.stroke();
+        */
+        
+        lastViewRect = T5.XYRect.copy(viewRect);
+    } // draw
+    
     function drawImage(context, viewRect, x, y, imageData, viewState) {
         var callback, image;
         
@@ -6972,56 +7037,12 @@ T5.ImageLayer = function(genId, params) {
     /* definition */
     
     var self = T5.ex(new T5.ViewLayer(params), {
+        changeGenerator: changeGenerator,
         cycle: function(tickCount, rect, state, redraw) {
             regenerate(rect);
         },
         
-        draw: function(context, viewRect, state, view) {
-            // COG.Log.info('drawing image layer layer @ ', rect);
-            
-            context.save();
-            try {
-                context.strokeStyle = '#555';
-
-                context.beginPath();
-
-                if (generatedImages) {
-                    for (var ii = generatedImages.length; ii--; ) {
-                        var xx = generatedImages[ii].x,
-                            yy = generatedImages[ii].y,
-                            // TODO: more efficient please...
-                            imageRect = T5.XYRect.init(
-                                generatedImages[ii].x,
-                                generatedImages[ii].y,
-                                generatedImages[ii].x + generatedImages[ii].width,
-                                generatedImages[ii].y + generatedImages[ii].height);
-
-                        // draw the image
-                        if (T5.XYRect.intersect(viewRect, imageRect)) {
-                            self.drawImage(context, viewRect, xx, yy, generatedImages[ii], state);
-                        } // if
-                    } // for
-                } // if
-                
-                context.clip();
-            }
-            finally {
-                context.restore();
-            } // try..finally
-            
-            /*
-            context.strokeStyle = '#f00';
-            context.beginPath();
-            context.moveTo(viewRect.x1 + viewRect.width/2, viewRect.y1);
-            context.lineTo(viewRect.x1 + viewRect.width/2, viewRect.y2);
-            context.moveTo(viewRect.x1, viewRect.y1 + viewRect.height / 2);
-            context.lineTo(viewRect.x2, viewRect.y1 + viewRect.height / 2);
-            context.stroke();
-            */
-            
-            lastViewRect = T5.XYRect.copy(viewRect);
-        },
-        
+        draw: draw,
         drawImage: drawImage
     });
     
@@ -7082,7 +7103,11 @@ T5.Style = (function() {
         for (var styleId in data) {
             define(styleId, data[styleId]);
         } // for
-    } // defineMany 
+    } // defineMany
+    
+    function get(styleId) {
+        return styles[styleId];
+    } // get
     
     /**
     ### init(params)
@@ -7118,6 +7143,21 @@ T5.Style = (function() {
                 });
             } // if
         } // fillMods
+        
+        function reloadMods() {
+            mods = [];
+            
+            for (var keyName in params) {
+                fillMods(keyName);
+            } // for
+        } // reloadMods
+        
+        /* exports */
+        
+        function update(keyName, keyVal) {
+            params[keyName] = keyVal;
+            reloadMods();
+        } // update
 
         /* define self */
 
@@ -7127,16 +7167,14 @@ T5.Style = (function() {
                 for (var ii = mods.length; ii--; ) {
                     mods[ii](context);
                 } // for
-            }
+            },
+            
+            update: update
         };
 
         /* initialize */
 
-        for (var keyName in params) {
-            fillMods(keyName);
-        } // for
-
-
+        reloadMods();
         return self;        
     } // init
     
@@ -7155,6 +7193,7 @@ T5.Style = (function() {
         apply: apply,
         define: define,
         defineMany: defineMany,
+        get: get,
         init: init,
         load: load
     };

@@ -35,6 +35,21 @@
         foundModifiers = [],
         currentImage = null,
         userSearchOptions = {};
+        
+    var flickrLayerParams = {
+        apikey: 'e3a9e747b4964d7872a3a8976ff408b2',
+        tileHeight: tileSize,
+        tileWidth: tileSize,
+        imageLoadArgs: {
+            offset: new T5.Vector(10, 10),
+            drawBackground: drawBackground,
+            customDraw: drawTile,
+            realSize: {
+                width: tileSize,
+                height: tileSize
+            }
+        }
+    };
     /*
     // var the faves storage
     var faves = new Lawnchair({ 
@@ -42,33 +57,6 @@
         adaptor: /webkit/i.test(navigator.userAgent) ? 'webkit' : 'dom'
     });
     */
-    
-    /* initialise the mode handlers */
-    
-    var modeHandlers = {
-        interesting: function() {
-            resetState();
-            
-            modeMethod = METHOD_GET_INTERESTING;
-            queryFlickr();
-        },
-        
-        search: function() {
-            Ext.Msg.prompt("Flickr Photo Search", "Enter keywords to search for", function(value) {
-                resetState();
-
-                searchText = value;
-                queryFlickr();
-            });
-        },
-        
-        recent: function() {
-            resetState();
-            
-            modeMethod = METHOD_RECENT;
-            queryFlickr();
-        }
-    };
     
     /* internal functions */
     
@@ -313,23 +301,6 @@
             container: 'photos',
             scalable: false
         });
-        
-        var photoLayer = tiler.setLayer('photos', new T5.ImageLayer('flickr', {
-            apikey: 'e3a9e747b4964d7872a3a8976ff408b2',
-            tileHeight: tileSize,
-            tileWidth: tileSize,
-            imageLoadArgs: {
-                offset: new T5.Vector(10, 10),
-                drawBackground: drawBackground,
-                customDraw: drawTile,
-                realSize: {
-                    width: tileSize,
-                    height: tileSize
-                }
-            }
-        }));
-        
-        photoLayer.bind('tapImage', viewTilePhoto);
     } // initMap
     
     function buildPhotoSourceList() {
@@ -339,7 +310,9 @@
                 { name: 'title', type: 'string' }
             ]
         });
-        
+
+        // for now initialise the datasource statically but these should be pulled from an
+        // external datasource
         photoSources = new Ext.data.JsonStore({
             model: 'PhotoSource',
             sorters: 'group',
@@ -350,13 +323,32 @@
             
             data: [{
                 group: 'Flickr',
-                title: 'Interesting'
+                title: 'Interesting',
+                
+                generator: 'flickr',
+                layerParams: T5.ex({}, flickrLayerParams, {
+                    mode: 'interesting'
+                })
             }, {
                 group: 'Flickr',
-                title: 'Recent'
-            }]
+                title: 'Recent',
+                
+                generator: 'flickr',
+                layerParams: T5.ex({}, flickrLayerParams, {
+                    mode: 'recent'
+                })
+            } /*, {
+                group: 'Flickr',
+                title: 'Search',
+                
+                generator: 'flickr',
+                layerParams: T5.ex({}, flickrLayerParams, {
+                    mode: 'search'
+                })
+            } */]
         });
         
+        // create the list of photo sources
         photoSourceList = new Ext.List({
             dock: 'left',
             ui: 'midnight',
@@ -366,6 +358,33 @@
             
             store: photoSources
         });
+        
+        // listen for selection change events
+        photoSourceList.addListener('selectionChange', function(model, records) {
+            var itemData = (records && records.length > 0) ? records[0].data : null;
+            
+            COG.Log.info('selection changed');
+            if (itemData) {
+                setTimeout(function() {
+                    tiler.updateOffset(0, 0, T5.easing('sine.out'), 1000, function() {
+                        // if the layer has not already been created, then do that now
+                        if (! itemData.layer) {
+                            itemData.layer = createLayer(itemData.generator, itemData.layerParams);
+                        } // if
+                        
+                        // update the layer
+                        tiler.setLayer('photos', itemData.layer);
+                    });
+                }, 100);
+            } // if
+        });
+        
+        photoSourceList.addListener('afterrender', function() {
+            photoSourceList.select(0);
+        });
+        
+        // select the first item
+        // photoSourceList.select(0);
     } // buildPhotoSourceList
     
     function buildToolbar() {
@@ -381,14 +400,6 @@
                 runSearch();
             } // if
         });
-        
-        var tapHandler = function(button, event) {
-            var handler = modeHandlers[button.text.toLowerCase()];
-            if (handler) {
-                Ext.getCmp('photoContainer').setCard(0);
-                handler();
-            } // if
-        };
         
         var goBack = function(button, event) {
             Ext.getCmp('photoContainer').setCard(0);
@@ -443,6 +454,10 @@
             } // if
         });
     } // initMapPanel
+    
+    function createLayer(generator, generatorArgs) {
+        return new T5.ImageLayer(generator, generatorArgs);
+    } // createLayer
     
     /* pre load images */
     
